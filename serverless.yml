@@ -1,0 +1,89 @@
+service: notifycf
+app: notify-cf
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: ap-northeast-1
+  stage: dev
+  timeout: 30
+  # ==============
+  # 環境変数
+  # --------------
+  environment:
+    DISCORD_WEBHOOK_NOTIFY_COMMENT: '${param:DISCORD_WEBHOOK_NOTIFY_COMMENT}'
+    CF_URL: '${param:CF_URL}'
+    DYNAMODB_COMMENTS_TABLE: '${param:COMMENTS_TABLE}'
+  # ==============
+  # IAM
+  # --------------
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:*"
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${param:COMMENTS_TABLE}"
+
+# ==============
+# パラメーター
+# --------------
+params:
+  mrc:
+    DISCORD_WEBHOOK_NOTIFY_COMMENT: xxx
+    CF_URL: xxx
+    FC_ID: mrc
+    COMMENTS_TABLE: notifycf_${param:FC_ID}_comments
+  tunamayo:
+    DISCORD_WEBHOOK_NOTIFY_COMMENT: xxx
+    CF_URL: xxx
+    FC_ID: tunamayo
+    COMMENTS_TABLE: notifycf_${param:FC_ID}_comments
+
+# ==============
+# DynamoDB
+# --------------
+resources:
+  Resources:
+    commentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: '${param:COMMENTS_TABLE}'
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+# ==============
+# Lambda
+# --------------
+functions:
+  notify:
+    handler: handler.notify
+    events:
+      - schedule: cron(0/30 * ? * * *)
+
+# ==============
+# Plugins
+# --------------
+plugins:
+  - serverless-python-requirements
+  - serverless-dynamodb-local
+
+# ==============
+# Custom
+# --------------
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      inMemory: true
+      migrate: true

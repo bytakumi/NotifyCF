@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.2.30",
+    "serverless-python-requirements": "^6.0.0"
+  },
+  "overrides": {
+    "serverless-dynamodb-local": {
+      "dynamodb-localhost": "https://github.com/99x/dynamodb-localhost#db30898f8c40932c7177be7b2f1a81360d12876d"
+    }
+  }
+}
